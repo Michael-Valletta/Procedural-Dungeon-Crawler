@@ -3,12 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.UIElements;
 
 public class TileMapVisualizer : MonoBehaviour
 {
-    [SerializeField] private Tilemap floorTileMap;
+    [SerializeField] private Tilemap floorTileMap, wallTileMap;
 
-    [SerializeField] private TileBase floorTile;
+    [SerializeField] private TileBase floorTile, wallTop;
 
     public void PaintFloorTiles(IEnumerable<Vector2Int> floorPositions) 
     {
@@ -32,5 +33,11 @@ public class TileMapVisualizer : MonoBehaviour
     public void Clear()
     {
         floorTileMap.ClearAllTiles();
+        wallTileMap.ClearAllTiles();
+    }
+
+    internal void PaintSingleBasicWall(Vector2Int position)
+    {
+        PaintSingleTile(wallTileMap, wallTop, position);
     }
 }
