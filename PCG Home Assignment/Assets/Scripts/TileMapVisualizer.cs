@@ -9,7 +9,7 @@ public class TileMapVisualizer : MonoBehaviour
 {
     [SerializeField] private Tilemap floorTileMap, wallTileMap;
 
-    [SerializeField] private TileBase floorTile, wallTop;
+    [SerializeField] private TileBase floorTile, wallTop, wallSideRight, WallSideLeft, wallBottom, wallFull;
 
     public void PaintFloorTiles(IEnumerable<Vector2Int> floorPositions) 
     {
@@ -36,8 +36,39 @@ public class TileMapVisualizer : MonoBehaviour
         wallTileMap.ClearAllTiles();
     }
 
-    internal void PaintSingleBasicWall(Vector2Int position)
+    internal void PaintSingleBasicWall(Vector2Int position,string binaryType)
     {
-        PaintSingleTile(wallTileMap, wallTop, position);
+        int typeAsInt = Convert.ToInt32(binaryType, 2);
+        TileBase tile = null;
+        if (WallTypes.wallTop.Contains(typeAsInt))
+        {
+            tile = wallTop;
+        }
+        else if (WallTypes.wallSideRight.Contains(typeAsInt))
+        {
+            tile = wallSideRight;
+        }
+        else if (WallTypes.wallSideLeft.Contains(typeAsInt))
+        {
+            tile = WallSideLeft;
+        }
+        else if (WallTypes.wallBottom.Contains(typeAsInt))
+        {
+            tile = wallBottom;
+        }
+        else if (WallTypes.wallFull.Contains(typeAsInt))
+        {
+            tile = wallFull;
+        }
+        if (tile != null)
+        {
+            PaintSingleTile(wallTileMap, tile, position);
+        }
+
+    }
+
+    internal void PaintSingleCornerWall(Vector2Int position, string neighboursBinaryType)
+    {
+        throw new NotImplementedException();
     }
 }
