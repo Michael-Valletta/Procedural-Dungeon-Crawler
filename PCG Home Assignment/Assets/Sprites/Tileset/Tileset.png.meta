@@ -3023,11 +3023,11 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tileset_133
+      name: Wall Top
       rect:
         serializedVersion: 2
-        x: 320
-        y: 448
+        x: 252
+        y: 864
         width: 64
         height: 64
       alignment: 0
@@ -3045,11 +3045,11 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tileset_134
+      name: Top Wall
       rect:
         serializedVersion: 2
-        x: 384
-        y: 448
+        x: 336
+        y: 421
         width: 64
         height: 64
       alignment: 0
@@ -3378,8 +3378,8 @@ TextureImporter:
       name: Tileset_149
       rect:
         serializedVersion: 2
-        x: 320
-        y: 384
+        x: 321
+        y: 417
         width: 64
         height: 64
       alignment: 0
@@ -5785,8 +5785,6 @@ TextureImporter:
       Tileset_13: 395881933
       Tileset_130: -1117447189
       Tileset_131: -1598566560
-      Tileset_133: 873821871
-      Tileset_134: 912610964
       Tileset_136: 70817197
       Tileset_137: -954857737
       Tileset_138: -1515731393
@@ -5996,7 +5994,9 @@ TextureImporter:
       Tileset_97: 1012412606
       Tileset_98: -217038404
       Tileset_99: -59918621
+      Top Wall: 912610964
       Wall Right: -202479951
+      Wall Top: 873821871
       Wall left: 690750817
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0

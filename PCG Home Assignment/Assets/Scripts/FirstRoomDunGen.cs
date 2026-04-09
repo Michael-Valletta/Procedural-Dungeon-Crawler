@@ -10,6 +10,7 @@ public class FirstRoomDunGen : SimpleRandomWalkDungeonGenerator
     [SerializeField] private int dungeonWidth = 20, dungeonHeight = 20;
     [SerializeField] [Range(0,10)]private int offset = 1;
     [SerializeField] private bool randomWalkRooms = false;
+    [SerializeField] private ItemSpawner itemSpawner;
 
     protected override void RunProceduralGeneration()
     {
@@ -42,6 +43,11 @@ public class FirstRoomDunGen : SimpleRandomWalkDungeonGenerator
 
         tileMapVisualizer.PaintFloorTiles(floor);
         WallGenerator.CreateWalls(floor, tileMapVisualizer);
+
+        if (itemSpawner != null)
+        {
+            itemSpawner.SpawnEntities(floor, roomCenters[0]);
+        }
     }
 
     private HashSet<Vector2Int> CreateRoomsRandomly(List<BoundsInt> roomsList)
