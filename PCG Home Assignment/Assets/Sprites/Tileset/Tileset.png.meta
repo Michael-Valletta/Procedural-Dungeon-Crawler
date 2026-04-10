@@ -977,11 +977,11 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tileset_40
+      name: Broken Floor
       rect:
         serializedVersion: 2
         x: 512
-        y: 832
+        y: 837
         width: 64
         height: 64
       alignment: 0
@@ -5744,6 +5744,7 @@ TextureImporter:
     nameFileIdTable:
       Bottom Corner Wall Right: -1455637372
       Bottom Corner Wallleft: -1506070372
+      Broken Floor: -1123022270
       Corner Top Wall Going Right: -2123114873
       Corner going left: -693829535
       Cracked Floo: -2093898279
@@ -5929,7 +5930,6 @@ TextureImporter:
       Tileset_38: -100591179
       Tileset_39: 514197020
       Tileset_4: -1205431356
-      Tileset_40: -1123022270
       Tileset_41: -1380008668
       Tileset_42: 673023688
       Tileset_43: 122973593

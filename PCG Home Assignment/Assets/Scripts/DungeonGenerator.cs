@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using System.Collections.Generic; 
+using System.Collections.Generic;
 
 public class DungeonGenerator : MonoBehaviour
 {
@@ -11,6 +11,8 @@ public class DungeonGenerator : MonoBehaviour
     public GameObject enemyPrefab;
 
     private int[,] map;
+    private Vector2Int playerSpawnPoint;
+    private List<GameObject> activeEnemies = new List<GameObject>();
 
     [ContextMenu("Generate Dungeon")]
     public void Generate()
@@ -18,15 +20,20 @@ public class DungeonGenerator : MonoBehaviour
         GameObject oldPlayer = GameObject.FindWithTag("Player");
         if (oldPlayer != null) DestroyImmediate(oldPlayer);
 
-        GameObject[] oldEnemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach (GameObject e in oldEnemies) DestroyImmediate(e);
+        foreach (GameObject e in activeEnemies)
+        {
+            if (e != null) DestroyImmediate(e);
+        }
+        activeEnemies.Clear();
+
+        GameObject[] strayEnemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (GameObject e in strayEnemies) DestroyImmediate(e);
 
         floorMap.ClearAllTiles();
         wallMap.ClearAllTiles();
         map = new int[settings.width, settings.height];
 
         System.Random rng = new System.Random(settings.seed);
-        Vector2Int firstRoomCenter = Vector2Int.zero;
         Vector2Int previousRoomCenter = Vector2Int.zero;
 
         for (int i = 0; i < settings.roomCount; i++)
@@ -41,23 +48,26 @@ public class DungeonGenerator : MonoBehaviour
 
             Vector2Int currentRoomCenter = new Vector2Int(rx + rw / 2, ry + rh / 2);
 
-            if (i == 0) firstRoomCenter = currentRoomCenter;
-            else CreateCorridor(previousRoomCenter, currentRoomCenter);
+            if (i == 0)
+            {
+                playerSpawnPoint = currentRoomCenter;
+            }
+            else
+            {
+                CreateCorridor(previousRoomCenter, currentRoomCenter);
+            }
 
             previousRoomCenter = currentRoomCenter;
         }
-
         RenderMap();
 
         if (playerPrefab != null)
         {
-            Vector3 spawnPos = new Vector3(firstRoomCenter.x + 0.5f, firstRoomCenter.y + 0.5f, -1f);
+            Vector3 spawnPos = new Vector3(playerSpawnPoint.x + 0.5f, playerSpawnPoint.y + 0.5f, -1f);
             GameObject playerInstance = Instantiate(playerPrefab, spawnPos, Quaternion.identity);
 
-            CameraScript cam = Camera.main.GetComponent<CameraScript>();
-            if (cam != null) cam.target = playerInstance.transform;
-
-            Debug.Log("Player spawned at: " + spawnPos);
+            if (Camera.main.GetComponent<CameraScript>() != null)
+                Camera.main.GetComponent<CameraScript>().target = playerInstance.transform;
         }
 
         if (enemyPrefab != null)
@@ -110,14 +120,14 @@ public class DungeonGenerator : MonoBehaviour
         {
             int dir = (end.x > current.x) ? 1 : -1;
             SetFloorTile(current.x, current.y);
-            SetFloorTile(current.x, current.y + 1);
+            SetFloorTile(current.x, current.y + 1); 
             current.x += dir;
         }
         while (current.y != end.y)
         {
             int dir = (end.y > current.y) ? 1 : -1;
             SetFloorTile(current.x, current.y);
-            SetFloorTile(current.x + 1, current.y);
+            SetFloorTile(current.x + 1, current.y); 
             current.y += dir;
         }
     }
@@ -149,28 +159,31 @@ public class DungeonGenerator : MonoBehaviour
 
     void SpawnEnemies(System.Random rng)
     {
-        int totalEnemiesToSpawn = settings.roomCount * 2;
-        int spawnedSoFar = 0;
+        int enemiesToSpawn = settings.roomCount * 2;
+        int spawnedCount = 0;
+        int attempts = 0;
 
-        for (int i = 0; i < 100 && spawnedSoFar < totalEnemiesToSpawn; i++)
+        while (spawnedCount < enemiesToSpawn && attempts < 500)
         {
-            int x = rng.Next(2, settings.width - 2);
-            int y = rng.Next(2, settings.height - 2);
+            attempts++;
+            int x = rng.Next(1, settings.width - 1);
+            int y = rng.Next(1, settings.height - 1);
 
-            Vector2Int posInt = new Vector2Int(x, y);
-            float distFromSpawn = Vector2.Distance(new Vector2(x, y), new Vector2(settings.width / 2, settings.height / 2));
+            float distToSpawn = Vector2.Distance(new Vector2(x, y), playerSpawnPoint);
 
-            if (map[x, y] == 1 && IsInRoom(x, y) && distFromSpawn > 5f)
+            if (map[x, y] == 1 && IsInRoom(x, y) && distToSpawn > 6f)
             {
                 Vector3 spawnPos = new Vector3(x + 0.5f, y + 0.5f, -1f);
                 if (Physics2D.OverlapCircle(spawnPos, 0.4f) == null)
                 {
-                    Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
-                    spawnedSoFar++;
+                    GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+                    activeEnemies.Add(enemy);
+                    spawnedCount++;
                 }
             }
         }
     }
+
     bool IsInRoom(int x, int y)
     {
         int floorNeighbors = 0;
@@ -178,7 +191,6 @@ public class DungeonGenerator : MonoBehaviour
         if (x < settings.width - 1 && map[x + 1, y] == 1) floorNeighbors++;
         if (y > 0 && map[x, y - 1] == 1) floorNeighbors++;
         if (y < settings.height - 1 && map[x, y + 1] == 1) floorNeighbors++;
-
         return floorNeighbors == 4;
     }
 }
