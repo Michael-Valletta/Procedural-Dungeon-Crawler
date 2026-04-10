@@ -3375,11 +3375,11 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tileset_149
+      name: Cracked Floo
       rect:
         serializedVersion: 2
-        x: 321
-        y: 417
+        x: 319
+        y: 388
         width: 64
         height: 64
       alignment: 0
@@ -4343,11 +4343,11 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tileset_193
+      name: Cracked Floor
       rect:
         serializedVersion: 2
-        x: 64
-        y: 192
+        x: 71
+        y: 208
         width: 64
         height: 64
       alignment: 0
@@ -5746,6 +5746,8 @@ TextureImporter:
       Bottom Corner Wallleft: -1506070372
       Corner Top Wall Going Right: -2123114873
       Corner going left: -693829535
+      Cracked Floo: -2093898279
+      Cracked Floor: -1225492698
       Floor: -1381662966
       Full Wall: 1175798864
       Tileset_1: -53681025
@@ -5799,7 +5801,6 @@ TextureImporter:
       Tileset_146: -615127622
       Tileset_147: -1650291773
       Tileset_148: -990789696
-      Tileset_149: -2093898279
       Tileset_15: -402014867
       Tileset_150: -292122222
       Tileset_152: 1576049432
@@ -5844,7 +5845,6 @@ TextureImporter:
       Tileset_190: 1533545155
       Tileset_191: -1857072518
       Tileset_192: -894775613
-      Tileset_193: -1225492698
       Tileset_194: 1544820275
       Tileset_195: -1774629347
       Tileset_196: 36956657
