@@ -2341,11 +2341,11 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tileset_102
+      name: Moss Floor
       rect:
         serializedVersion: 2
-        x: 384
-        y: 576
+        x: 376
+        y: 583
         width: 64
         height: 64
       alignment: 0
@@ -5751,11 +5751,11 @@ TextureImporter:
       Cracked Floor: -1225492698
       Floor: -1381662966
       Full Wall: 1175798864
+      Moss Floor: -1851043307
       Tileset_1: -53681025
       Tileset_10: 1268887066
       Tileset_100: 2140071431
       Tileset_101: 1444836368
-      Tileset_102: -1851043307
       Tileset_103: 515938598
       Tileset_104: 1008591406
       Tileset_105: -1228602036
