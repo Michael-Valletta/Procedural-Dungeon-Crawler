@@ -1373,11 +1373,11 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tileset_58
+      name: Normal Bottom Wall
       rect:
         serializedVersion: 2
-        x: 640
-        y: 768
+        x: 666
+        y: 778
         width: 64
         height: 64
       alignment: 0
@@ -5752,6 +5752,7 @@ TextureImporter:
       Floor: -1381662966
       Full Wall: 1175798864
       Moss Floor: -1851043307
+      Normal Bottom Wall: -2074610131
       Tileset_1: -53681025
       Tileset_10: 1268887066
       Tileset_100: 2140071431
@@ -5948,7 +5949,6 @@ TextureImporter:
       Tileset_55: 1011183931
       Tileset_56: 779208526
       Tileset_57: 1781462214
-      Tileset_58: -2074610131
       Tileset_59: 1435409686
       Tileset_6: -435840602
       Tileset_60: -1718931826

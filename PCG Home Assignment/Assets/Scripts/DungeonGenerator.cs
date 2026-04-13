@@ -7,190 +7,169 @@ public class DungeonGenerator : MonoBehaviour
     public DungeonSettings settings;
     public Tilemap floorMap;
     public Tilemap wallMap;
+    public Tilemap decoMap;
     public GameObject playerPrefab;
     public GameObject enemyPrefab;
 
     private int[,] map;
-    private Vector2Int playerSpawnPoint;
-    private List<GameObject> activeEnemies = new List<GameObject>();
+    private List<Vector2Int> roomCenters = new List<Vector2Int>();
 
     [ContextMenu("Generate Dungeon")]
     public void Generate()
     {
-        GameObject oldPlayer = GameObject.FindWithTag("Player");
-        if (oldPlayer != null) DestroyImmediate(oldPlayer);
-
-        foreach (GameObject e in activeEnemies)
-        {
-            if (e != null) DestroyImmediate(e);
-        }
-        activeEnemies.Clear();
-
-        GameObject[] strayEnemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach (GameObject e in strayEnemies) DestroyImmediate(e);
-
-        floorMap.ClearAllTiles();
-        wallMap.ClearAllTiles();
+        ClearDungeon();
         map = new int[settings.width, settings.height];
-
+        roomCenters.Clear();
         System.Random rng = new System.Random(settings.seed);
-        Vector2Int previousRoomCenter = Vector2Int.zero;
 
         for (int i = 0; i < settings.roomCount; i++)
         {
             int rw = rng.Next(settings.minRoomSize, settings.maxRoomSize);
             int rh = rng.Next(settings.minRoomSize, settings.maxRoomSize);
+            int rx = rng.Next(3, settings.width - rw - 3);
+            int ry = rng.Next(3, settings.height - rh - 3);
 
-            int rx = rng.Next(2, settings.width - rw - 2);
-            int ry = rng.Next(2, settings.height - rh - 2);
-
-            CarveRoom(rx, ry, rw, rh);
-
-            Vector2Int currentRoomCenter = new Vector2Int(rx + rw / 2, ry + rh / 2);
-
-            if (i == 0)
+            if (CanPlaceRoom(rx, ry, rw, rh))
             {
-                playerSpawnPoint = currentRoomCenter;
+                int theme = (i % 3 == 1) ? 2 : (i % 3 == 2) ? 4 : 1;
+                CarveRoom(rx, ry, rw, rh, theme);
+                roomCenters.Add(new Vector2Int(rx + rw / 2, ry + rh / 2));
             }
-            else
-            {
-                CreateCorridor(previousRoomCenter, currentRoomCenter);
-            }
-
-            previousRoomCenter = currentRoomCenter;
-        }
-        RenderMap();
-
-        if (playerPrefab != null)
-        {
-            Vector3 spawnPos = new Vector3(playerSpawnPoint.x + 0.5f, playerSpawnPoint.y + 0.5f, -1f);
-            GameObject playerInstance = Instantiate(playerPrefab, spawnPos, Quaternion.identity);
-
-            if (Camera.main.GetComponent<CameraScript>() != null)
-                Camera.main.GetComponent<CameraScript>().target = playerInstance.transform;
         }
 
-        if (enemyPrefab != null)
-        {
-            SpawnEnemies(rng);
-        }
+        for (int i = 0; i < roomCenters.Count - 1; i++)
+            CreateWideCorridor(roomCenters[i], roomCenters[i + 1]);
+
+        RenderDungeon(rng);
+        SpawnAndAutoLink();
     }
 
-    void RenderMap()
+    void RenderDungeon(System.Random rng)
     {
         for (int x = 0; x < settings.width; x++)
         {
             for (int y = 0; y < settings.height; y++)
             {
                 Vector3Int pos = new Vector3Int(x, y, 0);
+                int type = map[x, y];
 
-                if (map[x, y] == 1)
+                if (type > 0)
                 {
-                    float noiseValue = Mathf.PerlinNoise(x * settings.noiseScale, y * settings.noiseScale);
-                    if (noiseValue > 0.7f) floorMap.SetTile(pos, settings.mossyFloorTile);
-                    else if (noiseValue < 0.2f) floorMap.SetTile(pos, settings.crackedFloorTile);
-                    else floorMap.SetTile(pos, settings.floorTile);
+                    TileBase fTile = (type == 2) ? settings.waterTile : (type == 4) ? settings.mossyFloorTile : settings.floorTile;
+                    if (type == 1 && rng.NextDouble() < 0.05f) floorMap.SetTile(pos, settings.lavaTile);
+                    else floorMap.SetTile(pos, fTile);
+
+                    if (rng.NextDouble() < 0.03f && type != 2)
+                    {
+                        decoMap.SetTile(pos, (rng.Next(0, 2) == 0) ? settings.chestTile : settings.goldTile);
+                        Matrix4x4 matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(0.6f, 0.6f, 1f));
+                        decoMap.SetTransformMatrix(pos, matrix);
+                    }
                 }
-                else if (HasFloorNeighbor(x, y))
+                else if (HasNeighbor(x, y, out int theme))
                 {
-                    AssignDirectionalWall(x, y, pos);
+                    wallMap.SetTile(pos, GetThemedWall(x, y, theme));
+
+                    if (IsWalkable(x, y - 1) && rng.NextDouble() < 0.15f)
+                    {
+                        decoMap.SetTile(pos, settings.torchTile);
+                        Matrix4x4 torchMatrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(0.6f, 0.6f, 1f));
+                        decoMap.SetTransformMatrix(pos, torchMatrix);
+                    }
                 }
             }
         }
     }
 
-    void AssignDirectionalWall(int x, int y, Vector3Int pos)
+    TileBase GetThemedWall(int x, int y, int theme)
     {
-        bool floorBelow = (y > 0 && map[x, y - 1] == 1);
-        bool floorAbove = (y < settings.height - 1 && map[x, y + 1] == 1);
-        bool floorLeft = (x > 0 && map[x - 1, y] == 1);
-        bool floorRight = (x < settings.width - 1 && map[x + 1, y] == 1);
+        bool up = IsWalkable(x, y + 1);
+        bool down = IsWalkable(x, y - 1);
+        bool left = IsWalkable(x - 1, y);
+        bool right = IsWalkable(x + 1, y);
+        bool upLeft = IsWalkable(x - 1, y + 1);
+        bool upRight = IsWalkable(x + 1, y + 1);
 
-        if (floorBelow) wallMap.SetTile(pos, settings.wallTop);
-        else if (floorAbove) wallMap.SetTile(pos, settings.wallBottom);
-        else if (floorRight) wallMap.SetTile(pos, settings.wallLeft);
-        else if (floorLeft) wallMap.SetTile(pos, settings.wallRight);
-        else wallMap.SetTile(pos, settings.wallTile);
-    }
-
-    void CreateCorridor(Vector2Int start, Vector2Int end)
-    {
-        Vector2Int current = start;
-        while (current.x != end.x)
+        if (theme == 2)
         {
-            int dir = (end.x > current.x) ? 1 : -1;
-            SetFloorTile(current.x, current.y);
-            SetFloorTile(current.x, current.y + 1); 
-            current.x += dir;
+            if (up) return settings.waterWallBottom;
+            if (down) return settings.waterWallTop;
+            if (left) return settings.waterWallRight;
+            if (right) return settings.waterWallLeft;
+            return settings.waterWallTop;
         }
-        while (current.y != end.y)
+        if (theme == 4)
         {
-            int dir = (end.y > current.y) ? 1 : -1;
-            SetFloorTile(current.x, current.y);
-            SetFloorTile(current.x + 1, current.y); 
-            current.y += dir;
+            if (up) return settings.mossWallBottom;
+            if (down) return settings.mossWallTop;
+            if (left) return settings.mossWallRight;
+            if (right) return settings.mossWallLeft;
+            return settings.mossWallTop;
         }
+
+        if (up) return settings.wallBottom;
+        if (down) return settings.wallTop;
+        if (left) return settings.wallRight;
+        if (right) return settings.wallLeft;
+        if (upLeft || upRight) return settings.wallTile;
+
+        return settings.wallTile;
     }
 
-    void SetFloorTile(int x, int y)
+    bool IsWalkable(int x, int y) => x >= 0 && x < settings.width && y >= 0 && y < settings.height && map[x, y] > 0;
+
+    void CreateWideCorridor(Vector2Int s, Vector2Int e)
     {
-        if (x >= 0 && x < settings.width && y >= 0 && y < settings.height)
-            map[x, y] = 1;
+        Vector2Int c = s;
+        while (c.x != e.x) { SetC(c.x, c.y); SetC(c.x, c.y + 1); c.x += (e.x > c.x) ? 1 : -1; }
+        while (c.y != e.y) { SetC(c.x, c.y); SetC(c.x + 1, c.y); c.y += (e.y > c.y) ? 1 : -1; }
     }
 
-    void CarveRoom(int x, int y, int w, int h)
+    void SetC(int x, int y) { if (map[x, y] == 0) map[x, y] = 1; }
+
+    bool CanPlaceRoom(int x, int y, int w, int h)
+    {
+        for (int i = x - 2; i < x + w + 2; i++)
+            for (int j = y - 2; j < y + h + 2; j++)
+                if (map[i, j] != 0) return false;
+        return true;
+    }
+
+    void CarveRoom(int x, int y, int w, int h, int t)
     {
         for (int i = x; i < x + w; i++)
-            for (int j = y; j < y + h; j++)
-                map[i, j] = 1;
+            for (int j = y; j < y + h; j++) map[i, j] = t;
     }
 
-    bool HasFloorNeighbor(int x, int y)
+    bool HasNeighbor(int x, int y, out int t)
     {
+        t = 1;
         for (int i = -1; i <= 1; i++)
             for (int j = -1; j <= 1; j++)
-            {
-                int cx = x + i; int cy = y + j;
-                if (cx >= 0 && cx < settings.width && cy >= 0 && cy < settings.height)
-                    if (map[cx, cy] == 1) return true;
-            }
+                if (IsWalkable(x + i, y + j)) { t = map[x + i, y + j]; return true; }
         return false;
     }
 
-    void SpawnEnemies(System.Random rng)
+    void SpawnAndAutoLink()
     {
-        int enemiesToSpawn = settings.roomCount * 2;
-        int spawnedCount = 0;
-        int attempts = 0;
-
-        while (spawnedCount < enemiesToSpawn && attempts < 500)
+        Vector3 pos = new Vector3(roomCenters[0].x, roomCenters[0].y, -1f);
+        GameObject p = Instantiate(playerPrefab, pos, Quaternion.identity);
+        Camera.main.GetComponent<CameraScript>().target = p.transform;
+        PlayerScript s = p.GetComponent<PlayerScript>();
+        if (s != null)
         {
-            attempts++;
-            int x = rng.Next(1, settings.width - 1);
-            int y = rng.Next(1, settings.height - 1);
-
-            float distToSpawn = Vector2.Distance(new Vector2(x, y), playerSpawnPoint);
-
-            if (map[x, y] == 1 && IsInRoom(x, y) && distToSpawn > 6f)
-            {
-                Vector3 spawnPos = new Vector3(x + 0.5f, y + 0.5f, -1f);
-                if (Physics2D.OverlapCircle(spawnPos, 0.4f) == null)
-                {
-                    GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
-                    activeEnemies.Add(enemy);
-                    spawnedCount++;
-                }
-            }
+            s.floorTilemap = floorMap;
+            s.lavaTile = settings.lavaTile;
+            s.waterTile = settings.waterTile;
         }
+        for (int i = 1; i < roomCenters.Count; i++)
+            Instantiate(enemyPrefab, new Vector3(roomCenters[i].x, roomCenters[i].y, -1f), Quaternion.identity);
     }
 
-    bool IsInRoom(int x, int y)
+    void ClearDungeon()
     {
-        int floorNeighbors = 0;
-        if (x > 0 && map[x - 1, y] == 1) floorNeighbors++;
-        if (x < settings.width - 1 && map[x + 1, y] == 1) floorNeighbors++;
-        if (y > 0 && map[x, y - 1] == 1) floorNeighbors++;
-        if (y < settings.height - 1 && map[x, y + 1] == 1) floorNeighbors++;
-        return floorNeighbors == 4;
+        floorMap.ClearAllTiles(); wallMap.ClearAllTiles(); decoMap.ClearAllTiles();
+        foreach (var e in GameObject.FindGameObjectsWithTag("Enemy")) DestroyImmediate(e);
+        if (GameObject.FindWithTag("Player")) DestroyImmediate(GameObject.FindWithTag("Player"));
     }
 }

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 13312, guid: 0000000000000000e000000000000000, type: 0}
   m_Name: Moss Floor
   m_EditorClassIdentifier: 
-  m_Sprite: {fileID: -1851043307, guid: 126a892179c0db04cbf123bd5fe70ed9, type: 3}
+  m_Sprite: {fileID: 683528549, guid: 9bd9f9e54d866b74998c32b9f04b2fd5, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Transform:
     e00: 1

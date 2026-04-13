@@ -31,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.15, y: 1.15, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -194,4 +194,9 @@ MonoBehaviour:
   attackDamage: 10
   enemyLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
+  maxHealth: 100
+  currentHealth: 0
+  floorTilemap: {fileID: 0}
+  lavaTile: {fileID: 11400000, guid: 74fe0ce586b18e846ad86bf463b60cf1, type: 2}
+  waterTile: {fileID: 11400000, guid: 9ea920c6c30e6fa44a6b227f73fe6330, type: 2}
