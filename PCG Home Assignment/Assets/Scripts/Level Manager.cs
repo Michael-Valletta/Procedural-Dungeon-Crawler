@@ -10,10 +10,10 @@ public class LevelManager : MonoBehaviour
     public TextMeshProUGUI enemyText;
 
     [Header("Victory Visuals")]
-    public GameObject victoryPanel; 
+    public GameObject victoryPanel;
 
     private int enemiesRemaining;
-    private int currentLevel = 1;
+    public int currentLevel = 1;
 
     void Awake() { Instance = this; }
 
@@ -34,10 +34,11 @@ public class LevelManager : MonoBehaviour
 
         yield return new WaitForSeconds(2.0f);
         victoryPanel.SetActive(false);
-        currentLevel++;
 
-        generator.settings.roomCount += 1; 
-        generator.settings.seed = Random.Range(0, 9999); 
+        currentLevel++; 
+
+        generator.settings.roomCount += 1;
+        generator.settings.seed = Random.Range(0, 9999);
 
         generator.Generate();
     }
