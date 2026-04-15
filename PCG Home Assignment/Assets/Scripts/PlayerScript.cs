@@ -20,11 +20,18 @@ public class PlayerScript : MonoBehaviour
     private bool isDead = false;
 
     public Tilemap floorTilemap;
+    public Tilemap decoTilemap;
     public TileBase lavaTile;
     public TileBase waterTile;
+    public TileBase poisonPoolTile;
+    public TileBase spikeTrapTile;
 
     private float lavaDamageCooldown = 2.0f;
     private float lastLavaDamageTime;
+    private float spikeDamageCooldown = 1.5f;
+    private float lastSpikeDamageTime;
+    private float poisonTickRate = 1.0f;
+    private float nextPoisonTick = 0f;
 
     void Awake() { currentHealth = maxHealth; }
 
@@ -48,6 +55,8 @@ public class PlayerScript : MonoBehaviour
         anim.SetFloat("Speed", moveInput.magnitude);
 
         if (Input.GetMouseButtonDown(0)) Attack();
+
+        HandleHazards();
     }
 
     void FixedUpdate()
@@ -69,6 +78,36 @@ public class PlayerScript : MonoBehaviour
             }
         }
         rb.linearVelocity = moveInput.normalized * currentSpeed;
+    }
+
+    void HandleHazards()
+    {
+        if (floorTilemap == null) return;
+
+        Vector3Int cellPos = floorTilemap.WorldToCell(transform.position);
+
+        if (decoTilemap != null)
+        {
+            TileBase decoTile = decoTilemap.GetTile(cellPos);
+            if (decoTile == spikeTrapTile && Time.time >= lastSpikeDamageTime + spikeDamageCooldown)
+            {
+                TakeDamage(10);
+                lastSpikeDamageTime = Time.time;
+
+                Animator trapAnim = decoTilemap.GetComponent<Animator>();
+                if (trapAnim != null) trapAnim.SetTrigger("TrapTrigger");
+            }
+        }
+
+        TileBase floorTile = floorTilemap.GetTile(cellPos);
+        if (floorTile == poisonPoolTile)
+        {
+            if (Time.time >= nextPoisonTick)
+            {
+                TakeDamage(2);
+                nextPoisonTick = Time.time + poisonTickRate;
+            }
+        }
     }
 
     void Attack()
@@ -97,7 +136,7 @@ public class PlayerScript : MonoBehaviour
         isDead = true;
         anim.SetTrigger("Die");
         GetComponent<Collider2D>().enabled = false;
-        Invoke("GoToGameOver", 2f); 
+        Invoke("GoToGameOver", 2f);
     }
 
     void GoToGameOver() { SceneManager.LoadScene("GameOverScene"); }

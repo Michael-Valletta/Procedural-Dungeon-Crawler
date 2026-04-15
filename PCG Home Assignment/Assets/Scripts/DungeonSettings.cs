@@ -48,4 +48,8 @@ public class DungeonSettings
     public TileBase chestTile;
     public TileBase goldTile;
     [Range(0, 1)] public float decorationChance = 0.05f;
+
+    [Header("Hazards")]
+    public TileBase spikeTrapTile;
+    public TileBase poisonPoolTile;
 }
