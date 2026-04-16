@@ -13,6 +13,9 @@ public class PlayerScript : MonoBehaviour
     public int maxHealth = 100;
     public int currentHealth;
 
+    [Header("Audio")]
+    public AudioSource damageSource;
+
     private Rigidbody2D rb;
     private Animator anim;
     private SpriteRenderer sprite;
@@ -45,37 +48,26 @@ public class PlayerScript : MonoBehaviour
     void Update()
     {
         if (isDead) { rb.linearVelocity = Vector2.zero; return; }
-
         moveInput.x = Input.GetAxisRaw("Horizontal");
         moveInput.y = Input.GetAxisRaw("Vertical");
-
-        if (moveInput.x > 0) sprite.flipX = false;
-        else if (moveInput.x < 0) sprite.flipX = true;
-
+        if (moveInput.x > 0) sprite.flipX = false; else if (moveInput.x < 0) sprite.flipX = true;
         anim.SetFloat("Speed", moveInput.magnitude);
-
         if (Input.GetMouseButtonDown(0)) Attack();
-
         HandleHazards();
     }
 
     void FixedUpdate()
     {
         if (isDead || floorTilemap == null) return;
-
         Vector3Int cellPos = floorTilemap.WorldToCell(transform.position);
         TileBase currentTile = floorTilemap.GetTile(cellPos);
         float currentSpeed = moveSpeed;
-
         if (currentTile == waterTile) currentSpeed *= 0.5f;
-
-        if (currentTile == lavaTile)
+        if (currentTile == lavaTile && Time.time >= lastLavaDamageTime + lavaDamageCooldown)
         {
-            if (Time.time >= lastLavaDamageTime + lavaDamageCooldown)
-            {
-                TakeDamage(2);
-                lastLavaDamageTime = Time.time;
-            }
+            PlayDamageSound();
+            TakeDamage(2);
+            lastLavaDamageTime = Time.time;
         }
         rb.linearVelocity = moveInput.normalized * currentSpeed;
     }
@@ -83,7 +75,6 @@ public class PlayerScript : MonoBehaviour
     void HandleHazards()
     {
         if (floorTilemap == null) return;
-
         Vector3Int cellPos = floorTilemap.WorldToCell(transform.position);
 
         if (decoTilemap != null)
@@ -91,30 +82,32 @@ public class PlayerScript : MonoBehaviour
             TileBase decoTile = decoTilemap.GetTile(cellPos);
             if (decoTile == spikeTrapTile && Time.time >= lastSpikeDamageTime + spikeDamageCooldown)
             {
+                PlayDamageSound();
                 TakeDamage(10);
                 lastSpikeDamageTime = Time.time;
-
                 Animator trapAnim = decoTilemap.GetComponent<Animator>();
                 if (trapAnim != null) trapAnim.SetTrigger("TrapTrigger");
             }
         }
 
         TileBase floorTile = floorTilemap.GetTile(cellPos);
-        if (floorTile == poisonPoolTile)
+        if (floorTile == poisonPoolTile && Time.time >= nextPoisonTick)
         {
-            if (Time.time >= nextPoisonTick)
-            {
-                TakeDamage(2);
-                nextPoisonTick = Time.time + poisonTickRate;
-            }
+            PlayDamageSound();
+            TakeDamage(2);
+            nextPoisonTick = Time.time + poisonTickRate;
         }
+    }
+
+    void PlayDamageSound()
+    {
+        if (damageSource != null) damageSource.Play();
     }
 
     void Attack()
     {
         anim.SetTrigger("Attack");
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, attackRange, enemyLayers);
-
         foreach (Collider2D enemy in hitEnemies)
         {
             EnemyScript e = enemy.GetComponent<EnemyScript>();
@@ -127,7 +120,6 @@ public class PlayerScript : MonoBehaviour
         if (isDead) return;
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-
         if (currentHealth <= 0) Die();
     }
 

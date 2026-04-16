@@ -11,6 +11,10 @@ public class DungeonGenerator : MonoBehaviour
     public GameObject playerPrefab;
     public GameObject[] enemyPrefabs;
 
+    [Header("Item Spawns")]
+    public GameObject healthPotionPrefab;
+    public GameObject speedBallPrefab;
+
     private int[,] map;
     private List<Vector2Int> roomCenters = new List<Vector2Int>();
 
@@ -36,15 +40,7 @@ public class DungeonGenerator : MonoBehaviour
 
             if (CanPlaceRoom(rx, ry, rw, rh, currentWidth, currentHeight))
             {
-                int theme = 1;
-                if (isTreasureRoom) theme = 7;
-                else
-                {
-                    int choice = i % 4;
-                    if (choice == 1) theme = 2;
-                    else if (choice == 2) theme = 4;
-                    else if (choice == 3) theme = 5;
-                }
+                int theme = isTreasureRoom ? 7 : (i % 4 == 1 ? 2 : i % 4 == 2 ? 4 : i % 4 == 3 ? 5 : 1);
                 CarveRoom(rx, ry, rw, rh, theme);
                 roomCenters.Add(new Vector2Int(rx + rw / 2, ry + rh / 2));
             }
@@ -59,7 +55,9 @@ public class DungeonGenerator : MonoBehaviour
 
     void RenderDungeon(System.Random rng, int w, int h, int level)
     {
-        float hazardChance = 0.02f + (level * 0.01f);
+        float roomHazardChance = 0.02f + (level * 0.005f);
+        float corridorHazardChance = 0.005f;
+
         for (int x = 0; x < w; x++)
         {
             for (int y = 0; y < h; y++)
@@ -69,33 +67,45 @@ public class DungeonGenerator : MonoBehaviour
                 if (type > 0)
                 {
                     TileBase fTile = settings.floorTile;
+                    float currentChance = (type == 1) ? corridorHazardChance : roomHazardChance;
+
                     if (type == 2) fTile = settings.waterTile;
                     else if (type == 4) fTile = settings.mossyFloorTile;
                     else if (type == 5) fTile = (rng.NextDouble() < 0.6f) ? settings.mossyFloorTile : settings.lavaTile;
 
-                    if (type != 7 && (type == 1 || type == 4) && rng.NextDouble() < hazardChance)
+                    if (type != 7 && type != 2 && rng.NextDouble() < currentChance)
                     {
                         if (rng.NextDouble() < 0.5f) decoMap.SetTile(pos, settings.spikeTrapTile);
                         else fTile = settings.poisonPoolTile;
                     }
 
-                    if (type == 1 && fTile != settings.poisonPoolTile && rng.NextDouble() < 0.05f) floorMap.SetTile(pos, settings.lavaTile);
-                    else floorMap.SetTile(pos, fTile);
+                    floorMap.SetTile(pos, fTile);
 
                     if (type == 7 && rng.NextDouble() < 0.6f)
-                    {
                         decoMap.SetTile(pos, (rng.Next(0, 2) == 0) ? settings.chestTile : settings.goldTile);
+
+                    if (type != 7 && type != 2 && fTile == settings.floorTile && rng.NextDouble() < 0.005f)
+                    {
+                        Instantiate(rng.Next(0, 2) == 0 ? healthPotionPrefab : speedBallPrefab, new Vector3(x, y, -1), Quaternion.identity);
                     }
 
                     if (decoMap.HasTile(pos))
                     {
-                        Matrix4x4 matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(0.6f, 0.6f, 1f));
+                        float scale = (decoMap.GetTile(pos) == settings.torchTile) ? 0.4f : 0.6f;
+                        Matrix4x4 matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1f));
                         decoMap.SetTransformMatrix(pos, matrix);
                     }
                 }
                 else if (HasNeighbor(x, y, w, h, out int theme))
                 {
                     wallMap.SetTile(pos, GetThemedWall(x, y, theme, w, h));
+
+                    if (IsWalkable(x, y - 1, w, h) && rng.NextDouble() < 0.12f)
+                    {
+                        decoMap.SetTile(pos, settings.torchTile);
+                        Matrix4x4 tMat = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(0.4f, 0.4f, 1f));
+                        decoMap.SetTransformMatrix(pos, tMat);
+                    }
                 }
             }
         }
@@ -103,7 +113,7 @@ public class DungeonGenerator : MonoBehaviour
 
     TileBase GetThemedWall(int x, int y, int theme, int w, int h)
     {
-        int wallTheme = (theme == 5 || theme == 7) ? 1 : theme;
+        int wallTheme = (theme == 5) ? 4 : (theme == 7) ? 1 : theme;
         if (IsWalkable(x, y + 1, w, h)) return (wallTheme == 2) ? settings.waterWallBottom : (wallTheme == 4) ? settings.mossWallBottom : settings.wallBottom;
         if (IsWalkable(x, y - 1, w, h)) return (wallTheme == 2) ? settings.waterWallTop : (wallTheme == 4) ? settings.mossWallTop : settings.wallTop;
         if (IsWalkable(x - 1, y, w, h)) return (wallTheme == 2) ? settings.waterWallRight : (wallTheme == 4) ? settings.mossWallRight : settings.wallRight;
@@ -120,7 +130,9 @@ public class DungeonGenerator : MonoBehaviour
         while (c.y != e.y) { SetC(c.x, c.y); SetC(c.x + 1, c.y); c.y += (e.y > c.y) ? 1 : -1; }
     }
 
-    void SetC(int x, int y) { if (map[x, y] == 0) map[x, y] = 1; }
+    void SetC(int x, int y) {
+        if (map[x, y] == 0) map[x, y] = 1;
+    }
 
     bool CanPlaceRoom(int x, int y, int w, int h, int mapW, int mapH)
     {
@@ -130,7 +142,9 @@ public class DungeonGenerator : MonoBehaviour
         return true;
     }
 
-    void CarveRoom(int x, int y, int w, int h, int t) { for (int i = x; i < x + w; i++) for (int j = y; j < y + h; j++) map[i, j] = t; }
+    void CarveRoom(int x, int y, int w, int h, int t) { 
+        for (int i = x; i < x + w; i++) for (int j = y; j < y + h; j++) map[i, j] = t; 
+    }
 
     bool HasNeighbor(int x, int y, int w, int h, out int t)
     {
@@ -152,14 +166,17 @@ public class DungeonGenerator : MonoBehaviour
         for (int i = 1; i < roomCenters.Count; i++)
         {
             int theme = map[roomCenters[i].x, roomCenters[i].y];
-            if (theme == 7) continue;
+            if (theme == 7)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    Instantiate(healthPotionPrefab, new Vector3(roomCenters[i].x + j, roomCenters[i].y, -1), Quaternion.identity);
+                    Instantiate(speedBallPrefab, new Vector3(roomCenters[i].x - j, roomCenters[i].y - 1, -1), Quaternion.identity);
+                }
+                continue;
+            }
 
-            GameObject prefab;
-            if (theme == 4) prefab = enemyPrefabs[0];
-            else if (theme == 2) prefab = enemyPrefabs[1];
-            else if (theme == 5) prefab = enemyPrefabs[2];
-            else prefab = enemyPrefabs[0];
-
+            GameObject prefab = (theme == 4) ? enemyPrefabs[0] : (theme == 2) ? enemyPrefabs[1] : (theme == 5) ? enemyPrefabs[2] : enemyPrefabs[0];
             int count = 1 + (level / 2);
             for (int j = 0; j < count; j++)
             {
@@ -173,6 +190,7 @@ public class DungeonGenerator : MonoBehaviour
     {
         floorMap.ClearAllTiles(); wallMap.ClearAllTiles(); decoMap.ClearAllTiles();
         foreach (var e in GameObject.FindGameObjectsWithTag("Enemy")) DestroyImmediate(e);
+        foreach (var i in GameObject.FindGameObjectsWithTag("Item")) DestroyImmediate(i);
         if (GameObject.FindWithTag("Player")) DestroyImmediate(GameObject.FindWithTag("Player"));
     }
 }
