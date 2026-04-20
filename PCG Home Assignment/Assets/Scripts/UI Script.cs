@@ -4,7 +4,8 @@ using TMPro;
 public class UIScript : MonoBehaviour
 {
     public TextMeshProUGUI healthText;
-    public TextMeshProUGUI enemyCountText; 
+    public TextMeshProUGUI enemyCountText;
+    public TextMeshProUGUI scoreText; 
 
     private PlayerScript player;
 
@@ -22,5 +23,10 @@ public class UIScript : MonoBehaviour
 
         int count = GameObject.FindGameObjectsWithTag("Enemy").Length;
         enemyCountText.text = $"Enemies Left: {count}";
+
+        if (LevelManager.Instance != null && scoreText != null)
+        {
+            scoreText.text = $"Dungeons Cleared: {LevelManager.Instance.dungeonsCleared}";
+        }
     }
 }

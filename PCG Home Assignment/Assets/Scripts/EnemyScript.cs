@@ -39,7 +39,14 @@ public class EnemyScript : MonoBehaviour
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null) player = playerObj.transform;
 
-        if (LevelManager.Instance != null) LevelManager.Instance.RegisterEnemy();
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.RegisterEnemy();
+        }
+        else
+        {
+            Debug.LogError("Enemy spawned but LevelManager Instance is NULL!");
+        }
     }
 
     void FixedUpdate() 

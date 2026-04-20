@@ -121,6 +121,7 @@ public class PlayerScript : MonoBehaviour
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
         if (currentHealth <= 0) Die();
+        LevelManager.Instance.playerDamageTakenThisLevel += damage;
     }
 
     void Die()

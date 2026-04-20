@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 13312, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: Left Corner Wall Top
+  m_Name: Left Corner Moss Wall_0
   m_EditorClassIdentifier: 
-  m_Sprite: {fileID: 2080001695, guid: 9bd9f9e54d866b74998c32b9f04b2fd5, type: 3}
+  m_Sprite: {fileID: 895045497, guid: e7474b8cf41812047832a14bb142791f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Transform:
     e00: 1
@@ -32,5 +32,5 @@ MonoBehaviour:
     e32: 0
     e33: 1
   m_InstancedGameObject: {fileID: 0}
-  m_Flags: 0
+  m_Flags: 1
   m_ColliderType: 1

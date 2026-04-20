@@ -29,13 +29,16 @@ public class DungeonSettings
     public TileBase wallLeft;
     public TileBase wallRight;
 
+    [Header("Theme Corner Masters")]
+    public TileBase standardCorner;
+    public TileBase waterCorner;
+    public TileBase mossCorner;
+
     [Header("Themed Walls (Water)")]
     public TileBase waterWallTop;
     public TileBase waterWallBottom;
     public TileBase waterWallLeft;
     public TileBase waterWallRight;
-    public TileBase waterWallInnerCorner;
-    public TileBase waterWallOuterCorner;
 
     [Header("Themed Walls (Moss)")]
     public TileBase mossWallTop;

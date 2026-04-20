@@ -4060,8 +4060,8 @@ TextureImporter:
       name: Bottom Corner Wallleft
       rect:
         serializedVersion: 2
-        x: 261
-        y: 284
+        x: 262
+        y: 271
         width: 64
         height: 64
       alignment: 0
@@ -5728,6 +5728,28 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: Left Corner Wall top
+      rect:
+        serializedVersion: 2
+        x: 265
+        y: 420
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 231e551a807021342ad102c53f614262
+      internalID: -1523556565
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -5751,6 +5773,7 @@ TextureImporter:
       Cracked Floor: -1225492698
       Floor: -1381662966
       Full Wall: 1175798864
+      Left Corner Wall top: -1523556565
       Moss Floor: -1851043307
       Normal Bottom Wall: -2074610131
       Tileset_1: -53681025

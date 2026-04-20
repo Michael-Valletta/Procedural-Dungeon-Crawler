@@ -2371,7 +2371,7 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -2380,6 +2380,50 @@ TextureImporter:
       bones: []
       spriteID: 32229ec9ee1f49f4e890fbb70ed586bd
       internalID: -267673665
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Right Top Corner Moss Wall
+      rect:
+        serializedVersion: 2
+        x: 211
+        y: 528
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5c4b6944baa27404198395a49516ccd5
+      internalID: -377564978
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Top Left moss Wall
+      rect:
+        serializedVersion: 2
+        x: 67
+        y: 489
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 111208304573a1848b75ad54a9ee60e0
+      internalID: -291129357
       vertices: []
       indices: 
       edges: []
@@ -2413,6 +2457,7 @@ TextureImporter:
       Right Bottom Corner Water Wall: 1764192581
       Right Corner Wall Top: 1185775330
       Right Side Moss Wall: 1717147670
+      Right Top Corner Moss Wall: -377564978
       Tileset2_0: -1955902855
       Tileset2_1: 2017916481
       Tileset2_10: -1492884796
@@ -2497,6 +2542,7 @@ TextureImporter:
       Tileset2_88: -113141739
       Tileset2_89: 74942260
       Tileset2_9: 1163555024
+      Top Left moss Wall: -291129357
       Top Moss Wall: -1857945450
       Torch: -870841705
       Water Floor: -1990822038
