@@ -6,7 +6,7 @@ public class PlayerScript : MonoBehaviour
 {
     public float moveSpeed = 8f;
     public float attackRange = 1.2f;
-    public int attackDamage = 10;
+    public int attackDamage = 30;
     public LayerMask enemyLayers;
 
     [Header("Health Settings")]
@@ -121,18 +121,31 @@ public class PlayerScript : MonoBehaviour
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
         if (currentHealth <= 0) Die();
-        LevelManager.Instance.playerDamageTakenThisLevel += damage;
+        if (LevelManager.Instance != null) LevelManager.Instance.playerDamageTakenThisLevel += damage;
     }
 
     void Die()
     {
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.difficultyScore = Mathf.Max(0.5f, LevelManager.Instance.difficultyScore - 0.2f);
+            LevelManager.Instance.ResetMetrics();
+        }
         isDead = true;
         anim.SetTrigger("Die");
         GetComponent<Collider2D>().enabled = false;
         Invoke("GoToGameOver", 2f);
     }
 
-    void GoToGameOver() { SceneManager.LoadScene("GameOverScene"); }
+    void GoToGameOver()
+    {
+        DungeonGenerator gen = FindFirstObjectByType<DungeonGenerator>();
+        if (gen != null && gen.settings != null)
+        {
+            gen.settings.seed = Random.Range(0, 999999999);
+        }
+        SceneManager.LoadScene("GameOverScene");
+    }
 
     public System.Collections.IEnumerator ApplySpeedBoost(float extraSpeed, float time)
     {

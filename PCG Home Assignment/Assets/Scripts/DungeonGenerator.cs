@@ -21,7 +21,21 @@ public class DungeonGenerator : MonoBehaviour
     private Vector3 playerSpawnLocation;
     private bool portalSpawned = false;
 
+    [Header("Furniture Prefabs")]
+    public GameObject cratePrefab;
+    public GameObject TablePrefab;
+    public GameObject BarrelPrefab;
+
     [ContextMenu("Generate Dungeon")]
+
+    void Start()
+    {
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.ResetMetrics();
+        }
+        Generate();
+    }
     public void Generate()
     {
         ClearDungeon();
@@ -73,7 +87,7 @@ public class DungeonGenerator : MonoBehaviour
         if (portalSpawned) return;
         if (portalPrefab == null)
         {
-            Debug.LogError("Portal Prefab is missing from DungeonGenerator!");
+            Debug.LogError("Portal Prefab is missing from DungeonGen");
             return;
         }
 
@@ -122,6 +136,15 @@ public class DungeonGenerator : MonoBehaviour
                     else if (type == 4) fTile = (noiseValue > 0.6f) ? settings.mossyFloorTile : settings.floorTile;
                     else if (type == 5) fTile = (noiseValue > 0.5f) ? settings.mossyFloorTile : settings.lavaTile;
 
+                    if ((type == 4 || type == 5) && !decoMap.HasTile(pos))
+                    {
+                        if (rng.NextDouble() < 0.15f) 
+                        {
+                            decoMap.SetTile(pos, settings.mossyFloorTile);
+                            decoMap.SetTransformMatrix(pos, Matrix4x4.Scale(new Vector3(0.7f, 0.7f, 1f)));
+                        }
+                    }
+
                     if (type != 7 && type != 2 && rng.NextDouble() < hazardChance)
                     {
                         if (rng.NextDouble() < 0.5f) decoMap.SetTile(pos, settings.spikeTrapTile);
@@ -138,7 +161,18 @@ public class DungeonGenerator : MonoBehaviour
                     if (decoMap.HasTile(pos))
                     {
                         float s = (decoMap.GetTile(pos) == settings.torchTile) ? 0.4f : 0.6f;
-                        decoMap.SetTransformMatrix(pos, Matrix4x4.Scale(new Vector3(s, s, 1f)));
+                        if (decoMap.GetTile(pos) != settings.mossyFloorTile)
+                        {
+                            decoMap.SetTransformMatrix(pos, Matrix4x4.Scale(new Vector3(s, s, 1f)));
+                        }
+                    }
+                    if (type != 0 && type != 2 && type != 7)
+                    {
+                        if (rng.NextDouble() < 0.01f)
+                        {
+                            GameObject potionToSpawn = (rng.Next(0, 2) == 0) ? healthPotionPrefab : speedBallPrefab;
+                            Instantiate(potionToSpawn, new Vector3(x, y, -1f), Quaternion.identity, transform);
+                        }
                     }
                 }
                 else if (map[x, y] == 0 && HasNeighbor(x, y, w, h, out int theme))
@@ -176,13 +210,40 @@ public class DungeonGenerator : MonoBehaviour
     }
 
     bool IsWalkable(int x, int y, int w, int h) => x >= 0 && x < w && y >= 0 && y < h && map[x, y] > 0;
+
     void CreateWideCorridor(Vector2Int s, Vector2Int e)
     {
         Vector2Int c = s;
-        while (c.x != e.x) { SetC(c.x, c.y); SetC(c.x, c.y + 1); c.x += (e.x > c.x) ? 1 : -1; }
-        while (c.y != e.y) { SetC(c.x, c.y); SetC(c.x + 1, c.y); c.y += (e.y > c.y) ? 1 : -1; }
+        System.Random rng = new System.Random(settings.seed + s.x + s.y);
+
+        while (c.x != e.x)
+        {
+            SetC(c.x, c.y);
+            SetC(c.x, c.y + 1);
+            if (rng.NextDouble() < 0.03f)
+            {
+                GameObject prefab = rng.Next(0, 2) == 0 ? cratePrefab : BarrelPrefab;
+                Instantiate(prefab, new Vector3(c.x, c.y, -1f), Quaternion.identity);
+            }
+            c.x += (e.x > c.x) ? 1 : -1;
+        }
+
+        while (c.y != e.y)
+        {
+            SetC(c.x, c.y);
+            SetC(c.x + 1, c.y);
+
+            if (rng.NextDouble() < 0.03f)
+            {
+                GameObject prefab = rng.Next(0, 2) == 0 ? cratePrefab : BarrelPrefab;
+                Instantiate(prefab, new Vector3(c.x, c.y, -1f), Quaternion.identity);
+            }
+            c.y += (e.y > c.y) ? 1 : -1;
+        }
     }
+
     void SetC(int x, int y) { if (x >= 0 && x < map.GetLength(0) && y >= 0 && y < map.GetLength(1)) if (map[x, y] == 0) map[x, y] = 1; }
+
     bool CanPlaceRoom(int x, int y, int w, int h, int mapW, int mapH)
     {
         for (int i = x - 2; i < x + w + 2; i++)
@@ -190,7 +251,9 @@ public class DungeonGenerator : MonoBehaviour
                 if (i < 0 || i >= mapW || j < 0 || j >= mapH || map[i, j] != 0) return false;
         return true;
     }
+
     void CarveRoom(int x, int y, int w, int h, int t) { for (int i = x; i < x + w; i++) for (int j = y; j < y + h; j++) map[i, j] = t; }
+
     bool HasNeighbor(int x, int y, int w, int h, out int t)
     {
         t = 1;
@@ -222,18 +285,25 @@ public class DungeonGenerator : MonoBehaviour
         {
             float dda = (LevelManager.Instance != null) ? LevelManager.Instance.difficultyScore : 1.0f;
             int theme = map[roomCenters[i].x, roomCenters[i].y];
+
+            SpawnFurniture(roomCenters[i], theme, dda);
+
             if (theme == 7)
             {
                 Instantiate(healthPotionPrefab, new Vector3(roomCenters[i].x + 1, roomCenters[i].y, -1), Quaternion.identity);
                 Instantiate(healthPotionPrefab, new Vector3(roomCenters[i].x - 1, roomCenters[i].y, -1), Quaternion.identity);
+                Instantiate(healthPotionPrefab, new Vector3(roomCenters[i].x - 2, roomCenters[i].y, -1), Quaternion.identity);
+                Instantiate(healthPotionPrefab, new Vector3(roomCenters[i].x + 2, roomCenters[i].y, -1), Quaternion.identity);
                 Instantiate(speedBallPrefab, new Vector3(roomCenters[i].x, roomCenters[i].y + 1, -1), Quaternion.identity);
                 Instantiate(speedBallPrefab, new Vector3(roomCenters[i].x, roomCenters[i].y - 1, -1), Quaternion.identity);
+                Instantiate(speedBallPrefab, new Vector3(roomCenters[i].x, roomCenters[i].y - 2, -1), Quaternion.identity);
+                Instantiate(speedBallPrefab, new Vector3(roomCenters[i].x, roomCenters[i].y + 2, -1), Quaternion.identity);
                 continue;
             }
 
             GameObject prefab = (theme == 4) ? enemyPrefabs[0] : (theme == 2) ? enemyPrefabs[1] : (theme == 5) ? enemyPrefabs[2] : enemyPrefabs[0];
 
-            int baseCount = 1 + (level / 2);
+            int baseCount = 2 + (level);
             int finalCount = Mathf.RoundToInt(baseCount * dda);
             for (int j = 0; j < finalCount; j++)
             {
@@ -252,5 +322,41 @@ public class DungeonGenerator : MonoBehaviour
         foreach (var i in GameObject.FindGameObjectsWithTag("Item")) DestroyImmediate(i);
         foreach (var p in GameObject.FindGameObjectsWithTag("Portal")) DestroyImmediate(p);
         if (GameObject.FindWithTag("Player")) DestroyImmediate(GameObject.FindWithTag("Player"));
+    }
+
+    void SpawnFurniture(Vector2Int center, int theme, float dda)
+    {
+        if (theme == 2) return;
+
+        System.Random rng = new System.Random(settings.seed + center.x + center.y);
+
+        if (theme == 7)
+        {
+            Instantiate(TablePrefab, new Vector3(center.x - 2, center.y - 1, -1), Quaternion.identity);
+            Instantiate(TablePrefab, new Vector3(center.x + 2, center.y + 1, -1), Quaternion.identity);
+            return;
+        }
+
+        int barrelCount = (dda > 1.1f) ? rng.Next(2, 4) : rng.Next(0, 2);
+        int crateCount = (dda < 0.9f) ? rng.Next(3, 5) : rng.Next(1, 3);
+
+        for (int i = 0; i < barrelCount; i++)
+        {
+            Vector3 pos = GetPosNearWall(center, rng);
+            Instantiate(BarrelPrefab, pos, Quaternion.identity);
+        }
+
+        for (int i = 0; i < crateCount; i++)
+        {
+            Vector3 pos = GetPosNearWall(center, rng);
+            Instantiate(cratePrefab, pos, Quaternion.identity);
+        }
+    }
+
+    Vector3 GetPosNearWall(Vector2Int center, System.Random rng)
+    {
+        int offX = rng.Next(0, 2) == 0 ? rng.Next(-3, -1) : rng.Next(2, 4);
+        int offY = rng.Next(0, 2) == 0 ? rng.Next(-3, -1) : rng.Next(2, 4);
+        return new Vector3(center.x + offX, center.y + offY, -1f);
     }
 }

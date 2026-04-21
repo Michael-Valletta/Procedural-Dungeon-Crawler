@@ -45,7 +45,7 @@ public class EnemyScript : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Enemy spawned but LevelManager Instance is NULL!");
+            Debug.LogError("Enemy spawned but LevelManager Instance is null");
         }
     }
 

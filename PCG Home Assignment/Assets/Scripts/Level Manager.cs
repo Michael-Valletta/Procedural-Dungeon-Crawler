@@ -1,7 +1,8 @@
-using UnityEngine;
-using TMPro;
-using UnityEngine.UI;
 using System.Collections;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class LevelManager : MonoBehaviour
 {
@@ -17,9 +18,15 @@ public class LevelManager : MonoBehaviour
     public int currentLevel = 1;
     public int dungeonsCleared = 0;
 
-    public float difficultyScore = 1.0f; 
+    public float difficultyScore = 1.0f;
     public int playerDamageTakenThisLevel = 0;
+    public int enemiesKilledThisLevel = 0;
     public float levelStartTime;
+
+    void Start()
+    {
+        ResetStatsForNewLevel();
+    }
 
     void Awake()
     {
@@ -34,34 +41,47 @@ public class LevelManager : MonoBehaviour
         }
     }
 
-    public void RegisterEnemy() { enemiesRemaining++; UpdateUI(); }
+    public void RegisterEnemy()
+    {
+        enemiesRemaining++; UpdateUI();
+    }
 
     public void EnemyDied()
     {
         enemiesRemaining--;
+        enemiesKilledThisLevel++;
         if (enemiesRemaining < 0) enemiesRemaining = 0;
 
         UpdateUI();
-        bool noEnemiesLeft = (enemiesRemaining <= 0) || (GameObject.FindGameObjectsWithTag("Enemy").Length == 0);
 
-        if (noEnemiesLeft)
+        GameObject[] enemiesInScene = GameObject.FindGameObjectsWithTag("Enemy");
+
+        if (enemiesRemaining <= 0 || enemiesInScene.Length == 0)
         {
-            Debug.Log("LEVEL CLEAR: Triggering Portal Spawn.");
+            if (generator == null) generator = FindFirstObjectByType<DungeonGenerator>();
+
             if (generator != null)
             {
                 generator.SpawnExitPortal();
+                StartCoroutine(ShowPortalNotification());
             }
-            StartCoroutine(ShowPortalNotification());
+            else
+            {
+                Debug.LogError("Portal failed");
+            }
         }
     }
 
-    void UpdateUI() { if (enemyText != null) enemyText.text = "Enemies Left: " + enemiesRemaining; }
+    void UpdateUI()
+    {
+        if (enemyText != null) enemyText.text = "Enemies Left: " + enemiesRemaining;
+    }
 
     IEnumerator ShowPortalNotification()
     {
         if (portalNotificationText != null)
         {
-            portalNotificationText.gameObject.SetActive(true); 
+            portalNotificationText.gameObject.SetActive(true);
             portalNotificationText.text = "A Portal has appeared!";
             yield return new WaitForSeconds(5f);
             portalNotificationText.gameObject.SetActive(false);
@@ -75,14 +95,27 @@ public class LevelManager : MonoBehaviour
 
     IEnumerator VictorySequence()
     {
-        victoryPanel.SetActive(true);
+        if (victoryPanel == null)
+        {
+            GameObject go = GameObject.Find("VictoryFlash");
+            if (go != null) victoryPanel = go;
+        }
+
+        if (victoryPanel != null)
+        {
+            victoryPanel.SetActive(true);
+        }
+        else
+        {
+            Debug.LogError("VictoryFlash not found");
+        }
         dungeonsCleared++;
 
         yield return new WaitForSeconds(2.0f);
         victoryPanel.SetActive(false);
 
         generator.settings.roomCount += 1;
-        generator.settings.seed = Random.Range(0, 9999);
+        generator.settings.seed = Random.Range(0, 9999999);
 
         generator.Generate();
     }
@@ -90,7 +123,9 @@ public class LevelManager : MonoBehaviour
     public void ResetStatsForNewLevel()
     {
         playerDamageTakenThisLevel = 0;
+        enemiesKilledThisLevel = 0;
         levelStartTime = Time.time;
+        enemiesRemaining = 0;
     }
 
     public void CalculateDifficultyScore()
@@ -107,6 +142,44 @@ public class LevelManager : MonoBehaviour
         }
 
         difficultyScore = Mathf.Clamp(difficultyScore, 0.5f, 3.0f);
-        Debug.Log("New Difficulty Score: " + difficultyScore);
+    }
+
+    public void ResetMetrics()
+    {
+        enemiesRemaining = 0;
+        enemiesKilledThisLevel = 0;
+        playerDamageTakenThisLevel = 0;
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "GameScene")
+        {
+            GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+            foreach (GameObject obj in allObjects)
+            {
+                if (obj.name == "VictoryFlash" && obj.scene == scene)
+                {
+                    victoryPanel = obj;
+                    break;
+                }
+            }
+            enemyText = GameObject.Find("EnemyCounterText")?.GetComponent<TextMeshProUGUI>();
+            portalNotificationText = GameObject.Find("PortalNotificationText")?.GetComponent<TextMeshProUGUI>();
+
+            generator = FindFirstObjectByType<DungeonGenerator>();
+
+            Debug.Log(victoryPanel != null ? "Victory Panel FOund" : "Victory Panel not Found");
+        }
     }
 }

@@ -16,6 +16,7 @@ public class SceneManagerScript : MonoBehaviour
         if (LevelManager.Instance != null)
         {
             LevelManager.Instance.currentLevel = 1;
+            LevelManager.Instance.ResetMetrics();
         }
         SceneManager.LoadScene("GameScene");
     }
